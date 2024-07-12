@@ -19,6 +19,6 @@ yarn test
 
 ```shell
 
-yarn add @unisat/wallet-sdk
+yarn add @sat20/wallet-sdk
 
 ```

@@ -3,6 +3,8 @@ const path = require("path");
 module.exports = {
   mode: "production",
   entry: "./src/index.ts",
+  // devtool: 'source-map',
+  // mode: 'development',
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "bundle.js",

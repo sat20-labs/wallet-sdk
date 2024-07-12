@@ -71,7 +71,7 @@ describe('verifyMessage', function () {
     expect(result).eq(true);
   });
 
-  it('same with unisat wallet 1.1.33', async function () {
+  it('same with sat20 wallet 1.1.33', async function () {
     const message = 'hello';
     const wallet = new LocalWallet(
       'L3VFeEujGtevx9w18HD1fhRbCH67Az2dpCymeRE1SoPK6XQtaN2k',
