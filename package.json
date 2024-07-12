@@ -1,7 +1,7 @@
 {
   "name": "@sat20/wallet-sdk",
-  "version": "1.7.1",
-  "description": "UniSat Wallet SDK",
+  "version": "1.7.2",
+  "description": "Sat20 Wallet SDK",
   "keywords": [
     "bitcoin",
     "keyring",
