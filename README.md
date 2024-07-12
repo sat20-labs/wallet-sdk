@@ -1,4 +1,4 @@
-# UniSat Wallet SDK
+# Sat20 Wallet SDK
 
 ## Getting started
 
