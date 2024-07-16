@@ -1,6 +1,6 @@
 {
   "name": "@sat20/wallet-sdk",
-  "version": "1.7.3",
+  "version": "1.7.5",
   "description": "Sat20 Wallet SDK",
   "keywords": [
     "bitcoin",
