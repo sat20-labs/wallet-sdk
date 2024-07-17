@@ -31,7 +31,7 @@ function hasAtomicals(utxos: UnspentOutput[]) {
 }
 
 function hasAnyAssets(utxos: UnspentOutput[]) {
-  if (utxos.find((v) => v.inscriptions.length > 0 || v.atomicals.length > 0)) {
+  if (utxos.find((v) => v.inscriptions.length > 0 /*|| v.atomicals.length > 0*/)) {
     return true;
   }
   return false;
