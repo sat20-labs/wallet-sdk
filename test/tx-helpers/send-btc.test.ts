@@ -244,7 +244,7 @@ describe('sendBTC', () => {
             addressType: wallet_P2PKH.addressType,
             pubkey: wallet_P2PKH.pubkey,
             inscriptions: [],
-            atomicals: [],
+            // atomicals: [],
             rawtx: tx1.toHex()
           }
         ],
