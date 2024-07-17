@@ -9,26 +9,26 @@ function hasInscription(utxos: UnspentOutput[]) {
   return false;
 }
 
-function hasAtomicalsFT(utxos: UnspentOutput[]) {
-  if (utxos.find((v) => v.atomicals.find((w) => w.type === 'FT'))) {
-    return true;
-  }
-  return false;
-}
+// function hasAtomicalsFT(utxos: UnspentOutput[]) {
+//   if (utxos.find((v) => v.atomicals.find((w) => w.type === 'FT'))) {
+//     return true;
+//   }
+//   return false;
+// }
 
-function hasAtomicalsNFT(utxos: UnspentOutput[]) {
-  if (utxos.find((v) => v.atomicals.find((w) => w.type === 'NFT'))) {
-    return true;
-  }
-  return false;
-}
+// function hasAtomicalsNFT(utxos: UnspentOutput[]) {
+//   if (utxos.find((v) => v.atomicals.find((w) => w.type === 'NFT'))) {
+//     return true;
+//   }
+//   return false;
+// }
 
-function hasAtomicals(utxos: UnspentOutput[]) {
-  if (utxos.find((v) => v.atomicals.length > 0)) {
-    return true;
-  }
-  return false;
-}
+// function hasAtomicals(utxos: UnspentOutput[]) {
+//   if (utxos.find((v) => v.atomicals.length > 0)) {
+//     return true;
+//   }
+//   return false;
+// }
 
 function hasAnyAssets(utxos: UnspentOutput[]) {
   if (utxos.find((v) => v.inscriptions.length > 0 /*|| v.atomicals.length > 0*/)) {
@@ -96,9 +96,9 @@ export function getAddressUtxoDust(address: string, networkType: NetworkType = N
 }
 
 export const utxoHelper = {
-  hasAtomicalsFT,
-  hasAtomicalsNFT,
-  hasAtomicals,
+  // hasAtomicalsFT,
+  // hasAtomicalsNFT,
+  // hasAtomicals,
   hasInscription,
   hasAnyAssets,
   selectBtcUtxos,

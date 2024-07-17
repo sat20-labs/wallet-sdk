@@ -25,9 +25,9 @@ export async function splitInscriptionUtxo({
     throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
   }
 
-  if (utxoHelper.hasAtomicals([assetUtxo])) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
-  }
+  // if (utxoHelper.hasAtomicals([assetUtxo])) {
+  //   throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
+  // }
 
   const tx = new Transaction();
   tx.setNetworkType(networkType);

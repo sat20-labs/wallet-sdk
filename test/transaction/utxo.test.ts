@@ -18,8 +18,8 @@ describe('utxo', () => {
         inscriptionNumber: 100,
         offset: 0
       }
-    ],
-    atomicals: []
+    ]
+    // atomicals: []
   };
 
   const utxo_atomicals_ft: UnspentOutput = {
@@ -29,16 +29,16 @@ describe('utxo', () => {
     scriptPk: '',
     pubkey: '',
     addressType: AddressType.P2TR,
-    inscriptions: [],
-    atomicals: [
-      {
-        atomicalId: '',
-        atomicalNumber: 100,
-        type: 'FT',
-        ticker: 'atom',
-        atomicalValue: 1000
-      }
-    ]
+    inscriptions: []
+    // atomicals: [
+    //   {
+    //     atomicalId: '',
+    //     atomicalNumber: 100,
+    //     type: 'FT',
+    //     ticker: 'atom',
+    //     atomicalValue: 1000
+    //   }
+    // ]
   };
 
   const utxo_atomicals_nft: UnspentOutput = {
@@ -48,15 +48,15 @@ describe('utxo', () => {
     scriptPk: '',
     pubkey: '',
     addressType: AddressType.P2TR,
-    inscriptions: [],
-    atomicals: [
-      {
-        atomicalId: '',
-        atomicalNumber: 100,
-        type: 'NFT',
-        atomicalValue: 1000
-      }
-    ]
+    inscriptions: []
+    // atomicals: [
+    //   {
+    //     atomicalId: '',
+    //     atomicalNumber: 100,
+    //     type: 'NFT',
+    //     atomicalValue: 1000
+    //   }
+    // ]
   };
 
   const utxo_btc: UnspentOutput = {
@@ -66,8 +66,8 @@ describe('utxo', () => {
     scriptPk: '',
     pubkey: '',
     addressType: AddressType.P2TR,
-    inscriptions: [],
-    atomicals: []
+    inscriptions: []
+    // atomicals: []
   };
 
   beforeEach(() => {
@@ -79,16 +79,16 @@ describe('utxo', () => {
     expect(utxoHelper.hasInscription([utxo_btc, utxo_atomicals_ft, utxo_atomicals_nft, utxo_inscription])).to.be.true;
   });
 
-  it('hasAtomicalsFT', async function () {
-    expect(utxoHelper.hasAtomicalsFT([utxo_btc, utxo_inscription, utxo_atomicals_nft])).to.be.false;
-    expect(utxoHelper.hasAtomicalsFT([utxo_btc, utxo_inscription, utxo_atomicals_nft, utxo_atomicals_ft])).to.be.true;
-  });
+  // it('hasAtomicalsFT', async function () {
+  //   expect(utxoHelper.hasAtomicalsFT([utxo_btc, utxo_inscription, utxo_atomicals_nft])).to.be.false;
+  //   expect(utxoHelper.hasAtomicalsFT([utxo_btc, utxo_inscription, utxo_atomicals_nft, utxo_atomicals_ft])).to.be.true;
+  // });
 
-  it('hasAtomical', async function () {
-    expect(utxoHelper.hasAtomicalsNFT([utxo_btc])).to.be.false;
-    expect(utxoHelper.hasAtomicalsNFT([utxo_btc, utxo_atomicals_ft, utxo_inscription])).to.be.false;
-    expect(utxoHelper.hasAtomicalsNFT([utxo_btc, utxo_atomicals_nft])).to.be.true;
-  });
+  // it('hasAtomical', async function () {
+  //   expect(utxoHelper.hasAtomicalsNFT([utxo_btc])).to.be.false;
+  //   expect(utxoHelper.hasAtomicalsNFT([utxo_btc, utxo_atomicals_ft, utxo_inscription])).to.be.false;
+  //   expect(utxoHelper.hasAtomicalsNFT([utxo_btc, utxo_atomicals_nft])).to.be.true;
+  // });
 
   it('getUtxoDust', function () {
     expect(utxoHelper.getUtxoDust(AddressType.M44_P2TR)).to.eq(330);

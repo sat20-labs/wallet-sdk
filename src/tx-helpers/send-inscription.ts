@@ -29,9 +29,9 @@ export async function sendInscription({
     throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
   }
 
-  if (utxoHelper.hasAtomicals([assetUtxo])) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
-  }
+  // if (utxoHelper.hasAtomicals([assetUtxo])) {
+  //   throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
+  // }
 
   if (!enableMixed && assetUtxo.inscriptions.length !== 1) {
     throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
