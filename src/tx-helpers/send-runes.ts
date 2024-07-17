@@ -35,9 +35,9 @@ export async function sendRunes({
   enableRBF?: boolean;
 }) {
   // safe check
-  if (utxoHelper.hasAtomicalsNFT(assetUtxos) || utxoHelper.hasInscription(assetUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
-  }
+  // if (utxoHelper.hasAtomicalsNFT(assetUtxos) || utxoHelper.hasInscription(assetUtxos)) {
+  //   throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
+  // }
 
   if (utxoHelper.hasAnyAssets(btcUtxos)) {
     throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS);
