@@ -38,13 +38,13 @@ export interface UnspentOutput {
     inscriptionNumber?: number;
     offset: number;
   }[];
-  atomicals: {
-    atomicalId: string;
-    atomicalNumber: number;
-    type: 'FT' | 'NFT';
-    ticker?: string;
-    atomicalValue?: number;
-  }[];
+  // atomicals: {
+  //   atomicalId: string;
+  //   atomicalNumber: number;
+  //   type: 'FT' | 'NFT';
+  //   ticker?: string;
+  //   atomicalValue?: number;
+  // }[];
   runes?: {
     runeid: string;
     amount: string;
