@@ -1,3 +1,4 @@
+export * as account from './account';
 export * as address from './address';
 export * as core from './bitcoin-core';
 export * from './constants';
