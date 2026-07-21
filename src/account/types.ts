@@ -39,7 +39,7 @@ export interface RecoveryShare {
   total: 2 | 3;
   index: number;
   role: RecoveryShareRole;
-  /** Base64-encoded Shamir share bytes. */
+  /** Canonical public-share string produced by secrets.js-grempe with GF(2^8). */
   data: string;
   /** Hex checksum over all share metadata and data. */
   checksum: string;
@@ -128,5 +128,6 @@ export interface NewDeviceRecoveryOptions {
   locator: AccountLocator;
   shares: RecoveryShare[];
   confirm: (summary: AccountRecoverySummary) => boolean | Promise<boolean>;
+  /** PWA/native integration persists the recovered backup in platform-secure storage. */
   persist: (backup: AccountBackup) => void | Promise<void>;
 }
