@@ -32,8 +32,9 @@ export function accountBaseKey(accountId: string): string {
   return `/personal/${accountId}/account`;
 }
 
-export function accountEnvelopeKey(accountId: string): string {
-  return `${accountBaseKey(accountId)}/envelope`;
+export function accountEnvelopeKey(accountId: string, packageId: string): string {
+  assertPackageId(packageId);
+  return `${accountBaseKey(accountId)}/recovery/${packageId}/envelope`;
 }
 
 export function accountRecoveryManifestKey(accountId: string, packageId: string): string {
@@ -66,14 +67,20 @@ export class DkvsAccountRepository {
 
   async saveEnvelope(envelope: AccountEnvelope): Promise<void> {
     this.assertEnvelopeOwner(envelope);
-    await this.client.put(accountEnvelopeKey(this.accountId), Buffer.from(JSON.stringify(envelope), 'utf8'));
+    await this.client.put(
+      accountEnvelopeKey(this.accountId, envelope.locator.packageId),
+      Buffer.from(JSON.stringify(envelope), 'utf8')
+    );
   }
 
-  async getEnvelope(): Promise<AccountEnvelope | null> {
-    const value = await this.client.get(accountEnvelopeKey(this.accountId));
+  async getEnvelope(packageId: string): Promise<AccountEnvelope | null> {
+    const value = await this.client.get(accountEnvelopeKey(this.accountId, packageId));
     if (!value) return null;
     const envelope = JSON.parse(value.toString('utf8')) as AccountEnvelope;
     this.assertEnvelopeOwner(envelope);
+    if (envelope.locator.packageId !== packageId) {
+      throw new Error('envelope packageId does not match requested recovery package');
+    }
     return envelope;
   }
 
