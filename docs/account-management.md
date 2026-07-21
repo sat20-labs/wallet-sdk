@@ -221,7 +221,7 @@ Fuzzy Vault 只用于恢复 `S_dkvs` 的随机加密密钥，不直接保存账�
 账户数据放在用户自己的 personal 空间：
 
 ```text
-/personal/<account_id>/account/envelope
+/personal/<account_id>/account/recovery/<package_id>/envelope
 /personal/<account_id>/account/recovery/<package_id>/manifest
 /personal/<account_id>/account/recovery/<package_id>/share/dkvs
 /personal/<account_id>/account/recovery/<package_id>/questions
