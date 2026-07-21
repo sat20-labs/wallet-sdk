@@ -1,20 +1,34 @@
+import { createHash } from 'crypto';
 import { AccountEnvelope, RecoveryManifest } from './types';
 
 export interface OwnerScopedDkvsClient {
-  /** Account ID whose owner key signs records and whose payment contract pays. */
+  /** Account ID whose owner key both signs records and pays DKVS fees. */
   readonly accountId: string;
   put(key: string, value: Buffer): Promise<void>;
   get(key: string): Promise<Buffer | null>;
 }
 
-function assertPathSegment(value: string, name: string) {
-  if (!value || !/^[a-z0-9._-]+$/.test(value)) {
-    throw new Error(`invalid ${name}`);
+function assertAccountId(value: string) {
+  if (!value || !/^[0-9a-f]{64}$/.test(value)) {
+    throw new Error('invalid accountId');
   }
 }
 
+function assertPackageId(value: string) {
+  if (!value || !/^[0-9a-f]{32}$/.test(value)) {
+    throw new Error('invalid packageId');
+  }
+}
+
+export function accountIdFromPublicKey(publicKey: Buffer): string {
+  if (!Buffer.isBuffer(publicKey) || publicKey.length === 0) {
+    throw new Error('publicKey must be a non-empty Buffer');
+  }
+  return createHash('sha256').update(publicKey).digest('hex');
+}
+
 export function accountBaseKey(accountId: string): string {
-  assertPathSegment(accountId, 'accountId');
+  assertAccountId(accountId);
   return `/personal/${accountId}/account`;
 }
 
@@ -23,17 +37,17 @@ export function accountEnvelopeKey(accountId: string): string {
 }
 
 export function accountRecoveryManifestKey(accountId: string, packageId: string): string {
-  assertPathSegment(packageId, 'packageId');
+  assertPackageId(packageId);
   return `${accountBaseKey(accountId)}/recovery/${packageId}/manifest`;
 }
 
 export function accountDkvsShareCapsuleKey(accountId: string, packageId: string): string {
-  assertPathSegment(packageId, 'packageId');
+  assertPackageId(packageId);
   return `${accountBaseKey(accountId)}/recovery/${packageId}/share/dkvs`;
 }
 
 export function accountRecoveryQuestionsKey(accountId: string, packageId: string): string {
-  assertPathSegment(packageId, 'packageId');
+  assertPackageId(packageId);
   return `${accountBaseKey(accountId)}/recovery/${packageId}/questions`;
 }
 
@@ -45,7 +59,7 @@ export class DkvsAccountRepository {
     if (!client || !client.accountId) {
       throw new Error('an owner-scoped DKVS client is required');
     }
-    assertPathSegment(client.accountId, 'accountId');
+    assertAccountId(client.accountId);
     this.client = client;
     this.accountId = client.accountId;
   }
