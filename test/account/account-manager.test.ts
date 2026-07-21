@@ -2,15 +2,20 @@ declare function describe(name: string, fn: () => void): void;
 declare function it(name: string, fn: () => void | Promise<void>): void;
 
 import { strict as assert } from 'assert';
+import { randomBytes } from 'crypto';
 import {
   AccountBackup,
   AccountManager,
   DkvsAccountRepository,
   OwnerScopedDkvsClient,
+  accountIdFromPublicKey,
+  combineAccountSecret,
+  confirmRecoveryAnswers,
   createRecoveryAnswerTokens,
   decodeRecoveryShare,
   encodeRecoveryShare,
   normalizeRecoveryAnswer,
+  splitAccountSecret,
   validateRecoveryQuestionSet
 } from '../../src/account';
 
@@ -53,6 +58,22 @@ const backup: AccountBackup = {
   ]
 };
 
+const questionSet = {
+  version: 1 as const,
+  requiredAnswers: 2,
+  questions: [
+    { id: 'book-page', prompt: '最喜欢的一本书第十页最后十个字是什么？' },
+    { id: 'private-note', prompt: '你保存的一张私人纸条上的指定句子是什么？' },
+    { id: 'family-code', prompt: '你和家人约定的长口令是什么？', normalization: 'case-insensitive' as const }
+  ]
+};
+
+const answers = [
+  { questionId: 'book-page', answer: '  月光落在旧桥尽头  ' },
+  { questionId: 'private-note', answer: '风从南边的窗户进来' },
+  { questionId: 'family-code', answer: 'Silver-River-1987' }
+];
+
 describe('account management', () => {
   it('restores a 2-of-2 account package', () => {
     const manager = new AccountManager();
@@ -85,6 +106,46 @@ describe('account management', () => {
 
     for (const shares of combinations) {
       assert.deepEqual(manager.recoverAccount(recoveryPackage.envelope, shares), backup);
+    }
+  });
+
+  it('matches a deterministic Shamir test vector', () => {
+    const secret = Buffer.from(Array.from({ length: 32 }, (_, index) => index));
+    const coefficient = Buffer.from(Array.from({ length: 32 }, (_, index) => 255 - index));
+    const shares = splitAccountSecret(secret, '01'.repeat(16), '2of3', () => Buffer.from(coefficient));
+
+    assert.deepEqual(
+      shares.map(({ index, role, data, checksum }) => ({ index, role, data, checksum })),
+      [
+        {
+          index: 1,
+          role: 'user',
+          data: 'Af//////////////////////////////////////////',
+          checksum: '91ccb2946559e757'
+        },
+        {
+          index: 2,
+          role: 'dkvs',
+          data: 'AuXm4+Dp6u/s/f77+PHy9/TV1tPQ2drf3M3Oy8jBwsfE',
+          checksum: 'd98389a70229341a'
+        },
+        {
+          index: 3,
+          role: 'guardian',
+          data: 'AxoYHhwSEBYUCggODAIABgQ6OD48MjA2NCooLiwiICYk',
+          checksum: 'd7264e2618c23b85'
+        }
+      ]
+    );
+  });
+
+  it('passes randomized 2-of-3 recovery checks', () => {
+    for (let iteration = 0; iteration < 100; iteration++) {
+      const secret = randomBytes(32);
+      const shares = splitAccountSecret(secret, iteration.toString(16).padStart(32, '0'), '2of3');
+      assert.equal(combineAccountSecret([shares[0], shares[1]]).equals(secret), true);
+      assert.equal(combineAccountSecret([shares[0], shares[2]]).equals(secret), true);
+      assert.equal(combineAccountSecret([shares[1], shares[2]]).equals(secret), true);
     }
   });
 
@@ -170,23 +231,23 @@ describe('account management', () => {
     );
   });
 
-  it('normalizes and tokenizes private recovery questions locally', () => {
-    const questionSet = {
-      version: 1 as const,
-      requiredAnswers: 2,
-      questions: [
-        { id: 'book-page', prompt: '最喜欢的一本书第十页最后十个字是什么？' },
-        { id: 'private-note', prompt: '你保存的一张私人纸条上的指定句子是什么？' },
-        { id: 'family-code', prompt: '你和家人约定的长口令是什么？', normalization: 'case-insensitive' as const }
-      ]
-    };
-    const answers = [
-      { questionId: 'book-page', answer: '  月光落在旧桥尽头  ' },
-      { questionId: 'private-note', answer: '风从南边的窗户进来' },
-      { questionId: 'family-code', answer: 'Silver-River-1987' }
-    ];
+  it('derives the DKVS account id from the owner public key', () => {
+    assert.equal(accountIdFromPublicKey(Buffer.from('owner-public-key')).length, 64);
+    assert.equal(
+      accountIdFromPublicKey(Buffer.from('owner-public-key')),
+      accountIdFromPublicKey(Buffer.from('owner-public-key'))
+    );
+  });
 
+  it('normalizes, confirms and tokenizes private recovery questions locally', () => {
     validateRecoveryQuestionSet(questionSet, answers);
+    confirmRecoveryAnswers(questionSet, answers, answers.map((item) => ({ ...item })));
+    assert.throws(() =>
+      confirmRecoveryAnswers(questionSet, answers, [
+        ...answers.slice(0, 2),
+        { questionId: 'family-code', answer: 'different-private-answer' }
+      ])
+    );
     assert.equal(normalizeRecoveryAnswer('  Ｓilver-River-1987  ', 'case-insensitive'), 'silver-river-1987');
     const tokens = createRecoveryAnswerTokens(questionSet, answers);
     assert.equal(tokens.length, 3);
