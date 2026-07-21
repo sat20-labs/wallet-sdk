@@ -29,8 +29,34 @@ export function deriveAccountBackupKey(accountSecret: Buffer, locator: AccountLo
     .digest();
 }
 
+function canonicalAccountEnvelopeBytes(envelope: AccountEnvelope): Buffer {
+  return Buffer.from(
+    JSON.stringify({
+      version: envelope.version,
+      locator: {
+        version: envelope.locator.version,
+        accountId: envelope.locator.accountId,
+        packageId: envelope.locator.packageId,
+        recoveryMode: envelope.locator.recoveryMode
+      },
+      encryptedBackup: {
+        algorithm: envelope.encryptedBackup.algorithm,
+        iv: envelope.encryptedBackup.iv,
+        authTag: envelope.encryptedBackup.authTag,
+        ciphertext: envelope.encryptedBackup.ciphertext
+      }
+    }),
+    'utf8'
+  );
+}
+
 export function hashAccountEnvelope(envelope: AccountEnvelope): string {
-  return createHash('sha256').update(JSON.stringify(envelope), 'utf8').digest('hex');
+  const bytes = canonicalAccountEnvelopeBytes(envelope);
+  try {
+    return createHash('sha256').update(bytes).digest('hex');
+  } finally {
+    bytes.fill(0);
+  }
 }
 
 export function encryptAccountBackup(
