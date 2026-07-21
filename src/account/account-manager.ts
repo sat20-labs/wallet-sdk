@@ -146,7 +146,8 @@ export class AccountManager {
     assertLocatorMatchesShares(envelope, shares);
     const accountSecret = combineAccountSecret(shares);
     try {
-      return decryptAccountBackup(accountSecret, envelope.locator, envelope.encryptedBackup);
+      const backup = decryptAccountBackup(accountSecret, envelope.locator, envelope.encryptedBackup);
+      return backup;
     } finally {
       accountSecret.fill(0);
     }
@@ -161,7 +162,7 @@ export class AccountManager {
     }
 
     const [envelope, manifest] = await Promise.all([
-      this.repository.getEnvelope(),
+      this.repository.getEnvelope(locator.packageId),
       this.repository.getManifest(locator.packageId)
     ]);
     if (!envelope) throw new Error('account envelope was not found in DKVS');
