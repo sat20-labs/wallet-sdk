@@ -209,8 +209,10 @@ Fuzzy Vault 不使用纯随机记忆锚点作为默认产品体验。默认采�
 每个答案生成独立 token：
 
 ```text
-token = SHA256(domain || question_id || normalized_answer)
+token = SHA256(domain || package_specific_context || question_id || normalized_answer)
 ```
+
+其中 `package_specific_context` 使用当前 recovery package ID 或独立随机 salt，避免不同账户或不同恢复包复用同一答案时产生可关联 token。
 
 Fuzzy Vault 只用于恢复 `S_dkvs` 的随机加密密钥，不直接保存账户主秘密，也不直接保存明文 Shamir 分片。
 
