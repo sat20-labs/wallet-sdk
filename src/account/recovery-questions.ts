@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash } from 'crypto';
 import { RecoveryAnswer, RecoveryQuestion, RecoveryQuestionSet } from './types';
 
 const TOKEN_DOMAIN = 'sat20-wallet-recovery-question-v1';
@@ -96,7 +96,7 @@ export function confirmRecoveryAnswers(
   const firstTokens = createRecoveryAnswerTokens(questionSet, firstAnswers);
   const confirmationTokens = createRecoveryAnswerTokens(questionSet, confirmationAnswers);
   for (let index = 0; index < firstTokens.length; index++) {
-    if (!timingSafeEqual(firstTokens[index], confirmationTokens[index])) {
+    if (!firstTokens[index].equals(confirmationTokens[index])) {
       throw new Error(`recovery answer confirmation does not match question ${questionSet.questions[index].id}`);
     }
   }
