@@ -1,5 +1,5 @@
 import { randomBytes as nodeRandomBytes } from 'crypto';
-import { decryptAccountBackup, encryptAccountBackup, hashAccountBackup } from './crypto';
+import { decryptAccountBackup, encryptAccountBackup, hashAccountEnvelope } from './crypto';
 import { DkvsAccountRepository } from './repository';
 import { RandomSource, combineAccountSecret, createPackageId, splitAccountSecret } from './shamir';
 import {
@@ -54,7 +54,7 @@ function assertPackageConsistency(recoveryPackage: AccountRecoveryPackage) {
     manifest.locator.accountId !== envelope.locator.accountId ||
     manifest.locator.packageId !== envelope.locator.packageId ||
     manifest.locator.recoveryMode !== envelope.locator.recoveryMode ||
-    manifest.backupHash !== envelope.backupHash
+    manifest.envelopeHash !== hashAccountEnvelope(envelope)
   ) {
     throw new Error('recovery package envelope and manifest do not match');
   }
@@ -99,19 +99,17 @@ export class AccountManager {
         throw new Error('failed to create the required recovery shares');
       }
 
-      const backupHash = hashAccountBackup(backup);
       const envelope: AccountEnvelope = {
         version: 1,
         locator,
-        encryptedBackup: encryptAccountBackup(accountSecret, locator, backup),
-        backupHash
+        encryptedBackup: encryptAccountBackup(accountSecret, locator, backup)
       };
       const manifest: RecoveryManifest = {
         version: 1,
         locator,
         threshold: 2,
         total: options.recoveryMode === '2of2' ? 2 : 3,
-        backupHash,
+        envelopeHash: hashAccountEnvelope(envelope),
         createdAt: Date.now()
       };
 
@@ -148,11 +146,7 @@ export class AccountManager {
     assertLocatorMatchesShares(envelope, shares);
     const accountSecret = combineAccountSecret(shares);
     try {
-      const backup = decryptAccountBackup(accountSecret, envelope.locator, envelope.encryptedBackup);
-      if (hashAccountBackup(backup) !== envelope.backupHash) {
-        throw new Error('account backup hash mismatch');
-      }
-      return backup;
+      return decryptAccountBackup(accountSecret, envelope.locator, envelope.encryptedBackup);
     } finally {
       accountSecret.fill(0);
     }
@@ -178,7 +172,7 @@ export class AccountManager {
       manifest.locator.accountId !== locator.accountId ||
       manifest.locator.packageId !== locator.packageId ||
       manifest.locator.recoveryMode !== locator.recoveryMode ||
-      manifest.backupHash !== envelope.backupHash
+      manifest.envelopeHash !== hashAccountEnvelope(envelope)
     ) {
       throw new Error('account locator, manifest and envelope do not match');
     }
