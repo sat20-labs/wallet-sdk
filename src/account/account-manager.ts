@@ -91,7 +91,7 @@ export class AccountManager {
         packageId,
         recoveryMode: options.recoveryMode
       };
-      const shares = splitAccountSecret(accountSecret, packageId, options.recoveryMode, this.randomSource);
+      const shares = splitAccountSecret(accountSecret, packageId, options.recoveryMode);
       const userShare = shares.find((share) => share.role === 'user');
       const dkvsShare = shares.find((share) => share.role === 'dkvs');
       const guardianShare = shares.find((share) => share.role === 'guardian');
