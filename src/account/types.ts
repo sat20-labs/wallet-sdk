@@ -56,8 +56,6 @@ export interface AccountEnvelope {
   version: 1;
   locator: AccountLocator;
   encryptedBackup: EncryptedAccountBackup;
-  /** SHA-256 hash of the canonical plaintext backup. */
-  backupHash: string;
 }
 
 export interface RecoveryManifest {
@@ -65,7 +63,8 @@ export interface RecoveryManifest {
   locator: AccountLocator;
   threshold: 2;
   total: 2 | 3;
-  backupHash: string;
+  /** SHA-256 hash of the encrypted account envelope. */
+  envelopeHash: string;
   createdAt: number;
 }
 
