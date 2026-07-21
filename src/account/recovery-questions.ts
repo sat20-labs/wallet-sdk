@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 import { RecoveryAnswer, RecoveryQuestion, RecoveryQuestionSet } from './types';
 
 const TOKEN_DOMAIN = 'sat20-wallet-recovery-question-v1';
@@ -22,6 +22,38 @@ export function normalizeRecoveryAnswer(answer: string, mode: RecoveryQuestion['
   }
 
   return normalized;
+}
+
+function validateAnswers(questionSet: RecoveryQuestionSet, answers: RecoveryAnswer[]): Map<string, string> {
+  if (!Array.isArray(answers) || answers.length !== questionSet.questions.length) {
+    throw new Error('recovery answers must match the recovery question set');
+  }
+
+  const answerMap = new Map<string, string>();
+  for (const answer of answers) {
+    if (!answer || !answer.questionId || answerMap.has(answer.questionId)) {
+      throw new Error('recovery answer question ids must be unique');
+    }
+    answerMap.set(answer.questionId, answer.answer);
+  }
+
+  const normalizedAnswers = new Set<string>();
+  for (const question of questionSet.questions) {
+    const rawAnswer = answerMap.get(question.id);
+    if (rawAnswer === undefined) {
+      throw new Error(`missing answer for recovery question ${question.id}`);
+    }
+    const normalized = normalizeRecoveryAnswer(rawAnswer, question.normalization);
+    if (normalized.length < MIN_NORMALIZED_ANSWER_LENGTH) {
+      throw new Error(`answer for recovery question ${question.id} is too short`);
+    }
+    if (normalizedAnswers.has(normalized)) {
+      throw new Error('recovery answers must be independent');
+    }
+    normalizedAnswers.add(normalized);
+  }
+
+  return answerMap;
 }
 
 export function validateRecoveryQuestionSet(questionSet: RecoveryQuestionSet, answers?: RecoveryAnswer[]) {
@@ -50,22 +82,23 @@ export function validateRecoveryQuestionSet(questionSet: RecoveryQuestionSet, an
     questionIds.add(question.id);
   }
 
-  if (!answers) return;
-  const answerMap = new Map(answers.map((answer) => [answer.questionId, answer.answer]));
-  const answerTokens = new Set<string>();
-  for (const question of questionSet.questions) {
-    const rawAnswer = answerMap.get(question.id);
-    if (rawAnswer === undefined) {
-      throw new Error(`missing answer for recovery question ${question.id}`);
+  if (answers) validateAnswers(questionSet, answers);
+}
+
+export function confirmRecoveryAnswers(
+  questionSet: RecoveryQuestionSet,
+  firstAnswers: RecoveryAnswer[],
+  confirmationAnswers: RecoveryAnswer[]
+): void {
+  validateRecoveryQuestionSet(questionSet, firstAnswers);
+  validateRecoveryQuestionSet(questionSet, confirmationAnswers);
+
+  const firstTokens = createRecoveryAnswerTokens(questionSet, firstAnswers);
+  const confirmationTokens = createRecoveryAnswerTokens(questionSet, confirmationAnswers);
+  for (let index = 0; index < firstTokens.length; index++) {
+    if (!timingSafeEqual(firstTokens[index], confirmationTokens[index])) {
+      throw new Error(`recovery answer confirmation does not match question ${questionSet.questions[index].id}`);
     }
-    const normalized = normalizeRecoveryAnswer(rawAnswer, question.normalization);
-    if (normalized.length < MIN_NORMALIZED_ANSWER_LENGTH) {
-      throw new Error(`answer for recovery question ${question.id} is too short`);
-    }
-    if (answerTokens.has(normalized)) {
-      throw new Error('recovery answers must be independent');
-    }
-    answerTokens.add(normalized);
   }
 }
 
@@ -73,8 +106,8 @@ export function createRecoveryAnswerTokens(
   questionSet: RecoveryQuestionSet,
   answers: RecoveryAnswer[]
 ): Buffer[] {
-  validateRecoveryQuestionSet(questionSet, answers);
-  const answerMap = new Map(answers.map((answer) => [answer.questionId, answer.answer]));
+  validateRecoveryQuestionSet(questionSet);
+  const answerMap = validateAnswers(questionSet, answers);
 
   return questionSet.questions.map((question) => {
     const normalized = normalizeRecoveryAnswer(answerMap.get(question.id), question.normalization);
