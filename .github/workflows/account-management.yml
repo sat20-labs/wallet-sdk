@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: wallet-sdk-account-management-${{ github.ref }}
@@ -42,19 +42,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          yarn install --ignore-scripts --no-progress 2>&1 | tee /tmp/wallet-sdk-account-install.log
-
-      - name: Commit refreshed lockfile on the implementation branch
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          if ! git diff --quiet -- yarn.lock; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add yarn.lock
-            git commit -m 'chore: update yarn lock for account recovery'
-            git push origin HEAD:${GITHUB_REF_NAME}
-          fi
+          yarn install --frozen-lockfile --ignore-scripts --no-progress 2>&1 | tee /tmp/wallet-sdk-account-install.log
 
       - name: Type-check account module
         shell: bash
