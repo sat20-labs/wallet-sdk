@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'crypto';
-import { AccountBackup, AccountLocator, EncryptedAccountBackup } from './types';
+import { AccountBackup, AccountEnvelope, AccountLocator, EncryptedAccountBackup } from './types';
 import { normalizeAccountBackup } from './validation';
 
 const BACKUP_KEY_DOMAIN = 'sat20-wallet-account-backup-key-v1';
@@ -29,13 +29,8 @@ export function deriveAccountBackupKey(accountSecret: Buffer, locator: AccountLo
     .digest();
 }
 
-export function hashAccountBackup(backup: AccountBackup): string {
-  const plaintext = canonicalBackupBytes(backup);
-  try {
-    return createHash('sha256').update(plaintext).digest('hex');
-  } finally {
-    plaintext.fill(0);
-  }
+export function hashAccountEnvelope(envelope: AccountEnvelope): string {
+  return createHash('sha256').update(JSON.stringify(envelope), 'utf8').digest('hex');
 }
 
 export function encryptAccountBackup(
