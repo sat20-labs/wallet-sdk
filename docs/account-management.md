@@ -105,15 +105,16 @@ package_id
 recovery_mode
 ```
 
-密文包括：
+账户密文包括：
 
 ```text
 algorithm
 aes-gcm iv
 auth tag
 ciphertext
-plaintext backup hash
 ```
+
+Recovery Manifest 保存账户加密信封的 SHA-256 hash，用于确认 manifest 与 DKVS 中的 envelope 属于同一版本。该 hash 只覆盖密文信封，不覆盖明文助记词数据。
 
 `AccountSecret` 在生成恢复分片或恢复完成后应尽快从临时内存清除。
 
@@ -169,7 +170,7 @@ checksum
 2. threshold 和 share count 一致；
 3. share index 唯一；
 4. checksum 正确；
-5. 恢复出的账户备份 hash 正确。
+5. 恢复出的账户通过 AES-GCM 认证，并且 manifest 中的 encrypted envelope hash 与账户密文一致。
 
 ## 6. 基于私人知识问题的 Fuzzy Vault
 
@@ -361,7 +362,7 @@ getEncryptedQuestionSet
 3. 收集任意两份合法 Shamir 分片。
 4. 本地组合 AccountSecret。
 5. 本地解密 AccountBackup。
-6. 校验 plaintext backup hash。
+6. 校验 AES-GCM 认证，并确认 manifest 的 encrypted envelope hash 与 DKVS envelope 一致。
 7. 恢复每个钱包助记词。
 8. 按统一派生规则恢复指定数量的子账户。
 9. 将备份中的子账户名称恢复为对应 Ordinals DID 名称。
