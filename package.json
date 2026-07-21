@@ -43,6 +43,7 @@
     "bitcore-lib": "^10.0.0",
     "ecpair": "^2.1.0",
     "hdkey": "^2.1.0",
+    "secrets.js-grempe": "2.0.0",
     "tiny-secp256k1": "=2.2.1"
   },
   "devDependencies": {
