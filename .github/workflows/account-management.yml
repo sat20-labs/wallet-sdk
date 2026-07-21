@@ -1,0 +1,77 @@
+name: Wallet SDK account management
+
+on:
+  push:
+    branches: [feat/account-management-foundation]
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/account/**'
+      - 'test/account/**'
+      - 'docs/account-management.md'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'webpack.config.js'
+      - '.github/workflows/account-management.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wallet-sdk-account-management-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  account:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+          cache: yarn
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -o pipefail
+          yarn install --ignore-scripts --no-progress 2>&1 | tee /tmp/wallet-sdk-account-install.log
+
+      - name: Type-check account module
+        shell: bash
+        run: |
+          set -o pipefail
+          ./node_modules/.bin/tsc --noEmit --module commonjs --target es2015 --esModuleInterop --skipLibCheck \
+            src/account/*.ts test/account/account-manager.test.ts 2>&1 | tee /tmp/wallet-sdk-account-typecheck.log
+
+      - name: Run account tests
+        shell: bash
+        run: |
+          set -o pipefail
+          ./node_modules/.bin/mocha -r ts-node/register test/account/account-manager.test.ts --timeout 300000 \
+            2>&1 | tee /tmp/wallet-sdk-account-tests.log
+
+      - name: Build CommonJS and browser ESM bundles
+        shell: bash
+        run: |
+          set -o pipefail
+          yarn build 2>&1 | tee /tmp/wallet-sdk-account-build.log
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wallet-sdk-account-${{ github.run_id }}
+          path: |
+            /tmp/wallet-sdk-account-install.log
+            /tmp/wallet-sdk-account-typecheck.log
+            /tmp/wallet-sdk-account-tests.log
+            /tmp/wallet-sdk-account-build.log
+          retention-days: 3
