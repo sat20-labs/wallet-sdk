@@ -3,11 +3,13 @@ declare function it(name: string, fn: () => void | Promise<void>): void;
 
 import { strict as assert } from 'assert';
 import { randomBytes } from 'crypto';
+import * as secrets from 'secrets.js-grempe';
 import {
   AccountBackup,
   AccountManager,
   DkvsAccountRepository,
   OwnerScopedDkvsClient,
+  RecoveryShare,
   accountIdFromPublicKey,
   combineAccountSecret,
   confirmRecoveryAnswers,
@@ -109,38 +111,23 @@ describe('account management', () => {
     }
   });
 
-  it('matches a deterministic Shamir test vector', () => {
+  it('uses canonical shares that interoperate with secrets.js-grempe', () => {
     const secret = Buffer.from(Array.from({ length: 32 }, (_, index) => index));
-    const coefficient = Buffer.from(Array.from({ length: 32 }, (_, index) => 255 - index));
-    const shares = splitAccountSecret(secret, '01'.repeat(16), '2of3', () => Buffer.from(coefficient));
+    const shares = splitAccountSecret(secret, '01'.repeat(16), '2of3');
 
-    assert.deepEqual(
-      shares.map(({ index, role, data, checksum }) => ({ index, role, data, checksum })),
-      [
-        {
-          index: 1,
-          role: 'user',
-          data: 'Af//////////////////////////////////////////',
-          checksum: '91ccb2946559e757'
-        },
-        {
-          index: 2,
-          role: 'dkvs',
-          data: 'AuXm4+Dp6u/s/f77+PHy9/TV1tPQ2drf3M3Oy8jBwsfE',
-          checksum: 'd98389a70229341a'
-        },
-        {
-          index: 3,
-          role: 'guardian',
-          data: 'AxoYHhwSEBYUCggODAIABgQ6OD48MjA2NCooLiwiICYk',
-          checksum: 'd7264e2618c23b85'
-        }
-      ]
-    );
+    for (const share of shares) {
+      const components = secrets.extractShareComponents(share.data);
+      assert.equal(components.bits, 8);
+      assert.equal(components.id, share.index);
+    }
+
+    const restoredByProvider = Buffer.from(secrets.combine([shares[0].data, shares[2].data]), 'hex');
+    assert.equal(restoredByProvider.equals(secret), true);
+    assert.equal(combineAccountSecret([shares[1], shares[2]]).equals(secret), true);
   });
 
-  it('passes randomized 2-of-3 recovery checks', () => {
-    for (let iteration = 0; iteration < 100; iteration++) {
+  it('passes 1,000 randomized 2-of-3 recovery checks', () => {
+    for (let iteration = 0; iteration < 1000; iteration++) {
       const secret = randomBytes(32);
       const shares = splitAccountSecret(secret, iteration.toString(16).padStart(32, '0'), '2of3');
       assert.equal(combineAccountSecret([shares[0], shares[1]]).equals(secret), true);
@@ -158,6 +145,19 @@ describe('account management', () => {
     });
 
     assert.throws(() => manager.recoverAccount(recoveryPackage.envelope, [recoveryPackage.userShare]));
+  });
+
+  it('rejects modified share metadata and cross-package shares', () => {
+    const secret = randomBytes(32);
+    const first = splitAccountSecret(secret, '10'.repeat(16), '2of3');
+    const second = splitAccountSecret(secret, '20'.repeat(16), '2of3');
+
+    const modified: RecoveryShare = {
+      ...first[0],
+      packageId: '30'.repeat(16)
+    };
+    assert.throws(() => combineAccountSecret([modified, first[1]]), /checksum/);
+    assert.throws(() => combineAccountSecret([first[0], second[1]]), /different packages/);
   });
 
   it('encodes and decodes user shares with integrity checks', () => {
