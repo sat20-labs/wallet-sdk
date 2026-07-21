@@ -249,8 +249,10 @@ describe('account management', () => {
       ])
     );
     assert.equal(normalizeRecoveryAnswer('  Ｓilver-River-1987  ', 'case-insensitive'), 'silver-river-1987');
-    const tokens = createRecoveryAnswerTokens(questionSet, answers);
+    const tokens = createRecoveryAnswerTokens(questionSet, answers, 'package-context-001');
     assert.equal(tokens.length, 3);
     assert.equal(tokens[0].length, 32);
+    assert.notDeepEqual(tokens, createRecoveryAnswerTokens(questionSet, answers, 'package-context-002'));
+    assert.throws(() => createRecoveryAnswerTokens(questionSet, answers, ''));
   });
 });
