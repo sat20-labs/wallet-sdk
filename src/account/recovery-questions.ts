@@ -90,29 +90,35 @@ export function confirmRecoveryAnswers(
   firstAnswers: RecoveryAnswer[],
   confirmationAnswers: RecoveryAnswer[]
 ): void {
-  validateRecoveryQuestionSet(questionSet, firstAnswers);
-  validateRecoveryQuestionSet(questionSet, confirmationAnswers);
+  const firstMap = validateAnswers(questionSet, firstAnswers);
+  const confirmationMap = validateAnswers(questionSet, confirmationAnswers);
 
-  const firstTokens = createRecoveryAnswerTokens(questionSet, firstAnswers);
-  const confirmationTokens = createRecoveryAnswerTokens(questionSet, confirmationAnswers);
-  for (let index = 0; index < firstTokens.length; index++) {
-    if (!firstTokens[index].equals(confirmationTokens[index])) {
-      throw new Error(`recovery answer confirmation does not match question ${questionSet.questions[index].id}`);
+  for (const question of questionSet.questions) {
+    const first = normalizeRecoveryAnswer(firstMap.get(question.id), question.normalization);
+    const confirmation = normalizeRecoveryAnswer(confirmationMap.get(question.id), question.normalization);
+    if (!Buffer.from(first, 'utf8').equals(Buffer.from(confirmation, 'utf8'))) {
+      throw new Error(`recovery answer confirmation does not match question ${question.id}`);
     }
   }
 }
 
 export function createRecoveryAnswerTokens(
   questionSet: RecoveryQuestionSet,
-  answers: RecoveryAnswer[]
+  answers: RecoveryAnswer[],
+  tokenContext: string
 ): Buffer[] {
   validateRecoveryQuestionSet(questionSet);
+  if (!tokenContext || tokenContext.trim().length === 0) {
+    throw new Error('a package-specific token context is required');
+  }
   const answerMap = validateAnswers(questionSet, answers);
 
   return questionSet.questions.map((question) => {
     const normalized = normalizeRecoveryAnswer(answerMap.get(question.id), question.normalization);
     return createHash('sha256')
       .update(TOKEN_DOMAIN, 'utf8')
+      .update('\0', 'utf8')
+      .update(tokenContext, 'utf8')
       .update('\0', 'utf8')
       .update(question.id, 'utf8')
       .update('\0', 'utf8')
