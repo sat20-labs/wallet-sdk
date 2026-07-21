@@ -1,3 +1,4 @@
+import * as bip39 from 'bip39';
 import { AccountBackup, ManagedSubAccount, ManagedWallet } from './types';
 
 export class AccountValidationError extends Error {
@@ -29,6 +30,9 @@ function normalizeWallet(wallet: ManagedWallet): ManagedWallet {
   assertNonEmptyString(wallet.mnemonic, `wallet ${wallet.name} mnemonic`);
 
   const mnemonic = wallet.mnemonic.trim().replace(/\s+/g, ' ');
+  if (!bip39.validateMnemonic(mnemonic)) {
+    throw new AccountValidationError(`wallet ${wallet.name} contains an invalid BIP-39 mnemonic`);
+  }
   if (!Number.isInteger(wallet.accountCount) || wallet.accountCount < 1) {
     throw new AccountValidationError(`wallet ${wallet.name} accountCount must be a positive integer`);
   }
