@@ -17,7 +17,7 @@ function normalizeSubAccount(account: ManagedSubAccount, walletName: string): Ma
   if (!Number.isInteger(account.index) || account.index < 0) {
     throw new AccountValidationError(`wallet ${walletName} contains an invalid sub-account index`);
   }
-  assertNonEmptyString(account.name, `wallet ${walletName} sub-account name`);
+  assertNonEmptyString(account.name, `wallet ${walletName} sub-account DID name`);
   return {
     index: account.index,
     name: account.name.trim()
@@ -28,8 +28,9 @@ function normalizeWallet(wallet: ManagedWallet): ManagedWallet {
   assertNonEmptyString(wallet.name, 'wallet name');
   assertNonEmptyString(wallet.mnemonic, `wallet ${wallet.name} mnemonic`);
 
-  if (!Number.isInteger(wallet.accountCount) || wallet.accountCount < 0) {
-    throw new AccountValidationError(`wallet ${wallet.name} accountCount must be a non-negative integer`);
+  const mnemonic = wallet.mnemonic.trim().replace(/\s+/g, ' ');
+  if (!Number.isInteger(wallet.accountCount) || wallet.accountCount < 1) {
+    throw new AccountValidationError(`wallet ${wallet.name} accountCount must be a positive integer`);
   }
   if (!Array.isArray(wallet.subAccounts)) {
     throw new AccountValidationError(`wallet ${wallet.name} subAccounts must be an array`);
@@ -51,7 +52,7 @@ function normalizeWallet(wallet: ManagedWallet): ManagedWallet {
       throw new AccountValidationError(`wallet ${wallet.name} contains a duplicate sub-account index`);
     }
     if (names.has(account.name)) {
-      throw new AccountValidationError(`wallet ${wallet.name} contains a duplicate sub-account name`);
+      throw new AccountValidationError(`wallet ${wallet.name} contains a duplicate sub-account DID name`);
     }
     indexes.add(account.index);
     names.add(account.name);
@@ -65,7 +66,7 @@ function normalizeWallet(wallet: ManagedWallet): ManagedWallet {
 
   return {
     name: wallet.name.trim(),
-    mnemonic: wallet.mnemonic.trim().replace(/\s+/g, ' '),
+    mnemonic,
     accountCount: wallet.accountCount,
     subAccounts: subAccounts.sort((a, b) => a.index - b.index)
   };
