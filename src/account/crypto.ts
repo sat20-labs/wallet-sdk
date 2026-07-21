@@ -30,7 +30,12 @@ export function deriveAccountBackupKey(accountSecret: Buffer, locator: AccountLo
 }
 
 export function hashAccountBackup(backup: AccountBackup): string {
-  return createHash('sha256').update(canonicalBackupBytes(backup)).digest('hex');
+  const plaintext = canonicalBackupBytes(backup);
+  try {
+    return createHash('sha256').update(plaintext).digest('hex');
+  } finally {
+    plaintext.fill(0);
+  }
 }
 
 export function encryptAccountBackup(
@@ -39,19 +44,24 @@ export function encryptAccountBackup(
   backup: AccountBackup
 ): EncryptedAccountBackup {
   const key = deriveAccountBackupKey(accountSecret, locator);
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
-  cipher.setAAD(backupAad(locator));
-  const ciphertext = Buffer.concat([cipher.update(canonicalBackupBytes(backup)), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-  key.fill(0);
+  const plaintext = canonicalBackupBytes(backup);
+  try {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+    cipher.setAAD(backupAad(locator));
+    const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+    const authTag = cipher.getAuthTag();
 
-  return {
-    algorithm: 'aes-256-gcm',
-    iv: iv.toString('base64'),
-    authTag: authTag.toString('base64'),
-    ciphertext: ciphertext.toString('base64')
-  };
+    return {
+      algorithm: 'aes-256-gcm',
+      iv: iv.toString('base64'),
+      authTag: authTag.toString('base64'),
+      ciphertext: ciphertext.toString('base64')
+    };
+  } finally {
+    key.fill(0);
+    plaintext.fill(0);
+  }
 }
 
 export function decryptAccountBackup(
@@ -64,16 +74,18 @@ export function decryptAccountBackup(
   }
 
   const key = deriveAccountBackupKey(accountSecret, locator);
+  let plaintext: Buffer = null;
   try {
     const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(encrypted.iv, 'base64'));
     decipher.setAAD(backupAad(locator));
     decipher.setAuthTag(Buffer.from(encrypted.authTag, 'base64'));
-    const plaintext = Buffer.concat([
+    plaintext = Buffer.concat([
       decipher.update(Buffer.from(encrypted.ciphertext, 'base64')),
       decipher.final()
     ]);
     return normalizeAccountBackup(JSON.parse(plaintext.toString('utf8')) as AccountBackup);
   } finally {
     key.fill(0);
+    if (plaintext) plaintext.fill(0);
   }
 }
