@@ -143,29 +143,33 @@ export function splitAccountSecret(
     throw new Error('random source returned an invalid coefficient');
   }
 
-  return roles.map((role, offset) => {
-    const index = offset + 1;
-    const shareBytes = Buffer.alloc(secret.length + 1);
-    shareBytes[0] = index;
-    for (let byteIndex = 0; byteIndex < secret.length; byteIndex++) {
-      shareBytes[byteIndex + 1] = secret[byteIndex] ^ gfMultiply(coefficient[byteIndex], index);
-    }
+  try {
+    return roles.map((role, offset) => {
+      const index = offset + 1;
+      const shareBytes = Buffer.alloc(secret.length + 1);
+      shareBytes[0] = index;
+      for (let byteIndex = 0; byteIndex < secret.length; byteIndex++) {
+        shareBytes[byteIndex + 1] = secret[byteIndex] ^ gfMultiply(coefficient[byteIndex], index);
+      }
 
-    const unsignedShare: Omit<RecoveryShare, 'checksum'> = {
-      version: 1,
-      packageId,
-      threshold: 2,
-      total,
-      index,
-      role,
-      data: shareBytes.toString('base64')
-    };
+      const unsignedShare: Omit<RecoveryShare, 'checksum'> = {
+        version: 1,
+        packageId,
+        threshold: 2,
+        total,
+        index,
+        role,
+        data: shareBytes.toString('base64')
+      };
 
-    return {
-      ...unsignedShare,
-      checksum: computeShareChecksum(unsignedShare)
-    };
-  });
+      return {
+        ...unsignedShare,
+        checksum: computeShareChecksum(unsignedShare)
+      };
+    });
+  } finally {
+    coefficient.fill(0);
+  }
 }
 
 export function combineAccountSecret(shares: RecoveryShare[]): Buffer {
